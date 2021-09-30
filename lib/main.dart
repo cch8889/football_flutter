@@ -52,12 +52,13 @@ class _RandomWordsState extends State<RandomWords> {
 
     List<Map<String, dynamic>> l = [];
 
-    for(var i = 0; i < jsonResponse2['matches'].length; i++){
+    for(int i = 0; i < jsonResponse2['matches'].length; i++){
       print(jsonResponse2['matches'][i]['competition']['name']);
         print(todaysDate);
         var gameDate = DateTime.parse(jsonResponse2['matches'][i]['utcDate']);
         final difference = gameDate.difference(todaysDate).inDays;
         if((difference >= -30) && (difference <= 0)) {
+            print(jsonResponse2['matches'][i]);
             var identifier = { 'away':jsonResponse2['matches'][i]['awayTeam'], 'home':jsonResponse2['matches'][i]['homeTeam'],  'score':jsonResponse2['matches'][i]['score']};
             l.add(identifier);
         }
@@ -79,9 +80,7 @@ class _RandomWordsState extends State<RandomWords> {
   String _logo(dynamic user) {
     return user['crestUrl'];
   }
-  String _manager(dynamic user) {
-    return user['away'];
-  }
+
 
   Widget build(BuildContext context) {
     return Scaffold(
@@ -96,9 +95,17 @@ class _RandomWordsState extends State<RandomWords> {
             if (snapshot.hasData) {
               print("Check ${_name(snapshot.data[0])}");
               print("Check ${_address(snapshot.data[0])}");
-              for(var i = 0; i < snapshot.data[1].length; i++){
-                 print(_manager(snapshot.data[1][i]));
+              if(snapshot.data[1][0]['away']['name']=='Chelsea FC'){
+                    print(snapshot.data[1][0]['away']['name']['coach']);
+              }else if(snapshot.data[1][0]['home']['name']=='Chelsea FC'){
+                    print(snapshot.data[1][0]['home']['name']['coach']);
               }
+
+
+              // for(int i = 0; i < snapshot.data[1].length; i++){
+              //
+              //   print();
+              // }
 
               final Widget networkSvg = SvgPicture.network(
                   _logo(snapshot.data[0]),
@@ -159,7 +166,13 @@ class _RandomWordsState extends State<RandomWords> {
                     ],
                   ),
                 )
-              ]));
+              ,new ListView.builder(
+                    itemBuilder: (BuildContext context, int index) {
+                    return new Card(
+                    child: const ListTile(
+                    subtitle: const Text('Music by Julie Gable. Lyrics by Sidney Stein.'),
+                    ),
+                    )]));
             } else {
 
               return Center(child: CircularProgressIndicator());
