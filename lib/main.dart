@@ -42,8 +42,7 @@ class _RandomWordsState extends State<RandomWords> {
         // Send authorization headers to the backend.
         headers: {
           'X-Auth-Token': 'df696478a0754c2587c5b849289e4dcb',
-        }
-    );
+        });
 
     Map<String, dynamic> jsonResponse = convert.jsonDecode(response.body);
     Map<String, dynamic> jsonResponse2 = convert.jsonDecode(response2.body);
@@ -52,19 +51,23 @@ class _RandomWordsState extends State<RandomWords> {
 
     List<Map<String, dynamic>> l = [];
 
-    for(int i = 0; i < jsonResponse2['matches'].length; i++){
+    for (int i = 0; i < jsonResponse2['matches'].length; i++) {
       print(jsonResponse2['matches'][i]['competition']['name']);
-        print(todaysDate);
-        var gameDate = DateTime.parse(jsonResponse2['matches'][i]['utcDate']);
-        final difference = gameDate.difference(todaysDate).inDays;
-        if((difference >= -30) && (difference <= 0)) {
-            print(jsonResponse2['matches'][i]);
-            var identifier = { 'away':jsonResponse2['matches'][i]['awayTeam'], 'home':jsonResponse2['matches'][i]['homeTeam'],  'score':jsonResponse2['matches'][i]['score']};
-            l.add(identifier);
-        }
+      print(todaysDate);
+      var gameDate = DateTime.parse(jsonResponse2['matches'][i]['utcDate']);
+      final difference = gameDate.difference(todaysDate).inDays;
+      if ((difference >= -30) && (difference <= 0)) {
+        print(jsonResponse2['matches'][i]);
+        var identifier = {
+          'away': jsonResponse2['matches'][i]['awayTeam'],
+          'home': jsonResponse2['matches'][i]['homeTeam'],
+          'score': jsonResponse2['matches'][i]['score']
+        };
+        l.add(identifier);
+      }
     }
 
-    List output = [jsonResponse,l];
+    List output = [jsonResponse, l];
 
     return output;
   }
@@ -81,43 +84,35 @@ class _RandomWordsState extends State<RandomWords> {
     return user['crestUrl'];
   }
 
-
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text("jsonResponse"),
       ),
-      body:
-        Container(
+      body: Container(
         child: FutureBuilder<List>(
           future: func_name(),
           builder: (BuildContext context, AsyncSnapshot snapshot) {
             if (snapshot.hasData) {
               print("Check ${_name(snapshot.data[0])}");
               print("Check ${_address(snapshot.data[0])}");
-              if(snapshot.data[1][0]['away']['name']=='Chelsea FC'){
-                    print(snapshot.data[1][0]['away']['name']['coach']);
-              }else if(snapshot.data[1][0]['home']['name']=='Chelsea FC'){
-                    print(snapshot.data[1][0]['home']['name']['coach']);
-              }
-
 
               // for(int i = 0; i < snapshot.data[1].length; i++){
               //
               //   print();
               // }
-
+              print(snapshot.data[1][1]['away']);
               final Widget networkSvg = SvgPicture.network(
-                  _logo(snapshot.data[0]),
+                _logo(snapshot.data[0]),
                 semanticsLabel: 'Logo',
                 placeholderBuilder: (BuildContext context) => Container(
                     padding: const EdgeInsets.all(30.0),
                     child: const CircularProgressIndicator()),
               );
 
-
               return Center(
-                  child: Column(children: <Widget>[networkSvg,
+                  child: Column(children: <Widget>[
+                networkSvg,
                 Container(
                   margin: EdgeInsets.all(20),
                   child: Table(
@@ -165,16 +160,20 @@ class _RandomWordsState extends State<RandomWords> {
                       ]),
                     ],
                   ),
-                )
-              ,new ListView.builder(
-                    itemBuilder: (BuildContext context, int index) {
-                    return new Card(
-                    child: const ListTile(
-                    subtitle: const Text('Music by Julie Gable. Lyrics by Sidney Stein.'),
-                    ),
-                    )]));
+                ),
+                    Expanded(
+                      child: SizedBox(
+                      height: 200.0,
+                      child:ListView.builder(
+                          itemCount: snapshot.data[1].length,
+                        itemBuilder: (context, index) {
+                          return ListTile(
+                            title: Text(snapshot.data[1][index]['away']['name']),
+                          );
+                        },
+                    )))
+                     ]));
             } else {
-
               return Center(child: CircularProgressIndicator());
             }
           },
