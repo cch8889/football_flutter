@@ -1,13 +1,9 @@
-import 'package:english_words/english_words.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-
 import 'dart:async';
 import 'dart:convert' as convert;
-import 'dart:io';
-import 'dart:developer';
 
 void main() => runApp(MyApp());
 
@@ -24,10 +20,7 @@ class DemoApp extends StatefulWidget {
 }
 
 class _DemoAppState extends State<DemoApp> {
-  final _suggestions = <WordPair>[];
-  final _biggerFont = const TextStyle(fontSize: 18.0);
 
-  @override
   Future<List> getApiData() async {
     // get request for chelsea team data
     http.Response response =
@@ -38,14 +31,16 @@ class _DemoAppState extends State<DemoApp> {
         });
 
     Map<String, dynamic> jsonResponse;
-
     // check ok response & send default on failure
-    if(response.statusCode == 200){
+    if (response.statusCode == 200) {
       jsonResponse = convert.jsonDecode(response.body);
-    } else{
-      jsonResponse = {"name": "Name not found",
-                      "address": "Address not found",
-                      "crestUrl": "https://img01.bt.co.uk/s/assets/130921/images/logo/logo-2018.svg"};
+    } else {
+      jsonResponse = {
+        "name": "Name not found",
+        "address": "Address not found",
+        "crestUrl":
+            "https://img01.bt.co.uk/s/assets/130921/images/logo/logo-2018.svg"
+      };
     }
 
     // get request for matches played in last 30 days
@@ -57,12 +52,10 @@ class _DemoAppState extends State<DemoApp> {
           'X-Auth-Token': 'df696478a0754c2587c5b849289e4dcb',
         });
 
-
-
     Map<String, dynamic> jsonResponse2;
     // create list for output
     List<Map<String, dynamic>> l = [];
-    if(response2.statusCode == 200){
+    if (response2.statusCode == 200) {
       jsonResponse2 = convert.jsonDecode(response2.body);
       // find todays date
       final todaysDate = DateTime.now();
@@ -88,16 +81,17 @@ class _DemoAppState extends State<DemoApp> {
           l.add(identifier);
         }
       }
-    }else{
+    } else {
       var identifier = {
-        'away': {"name":"Not found"},
-        'home': {"name":"Not found"},
-        'score': {"fullTime":{"homeTeam":"0", "awayTeam":"0"}},
+        'away': {"name": "Not found"},
+        'home': {"name": "Not found"},
+        'score': {
+          "fullTime": {"homeTeam": "0", "awayTeam": "0"}
+        },
         'date': "Date not found"
       };
       // push to a list
       l.add(identifier);
-
     }
 
     // prepare data for output
@@ -119,10 +113,11 @@ class _DemoAppState extends State<DemoApp> {
     return user['crestUrl'];
   }
 
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Football demo app"),
+        title: const Text("Football demo app"),
       ),
       body: Container(
         child: FutureBuilder<List>(
@@ -134,7 +129,7 @@ class _DemoAppState extends State<DemoApp> {
               // check api has returned data
 
               final Widget networkSvg = SvgPicture.network(
-                // create widjet for logo
+                // create widget for logo
                 _logo(snapshot.data[0]),
                 semanticsLabel: 'Logo',
                 placeholderBuilder: (BuildContext context) => Container(
@@ -147,29 +142,29 @@ class _DemoAppState extends State<DemoApp> {
                 // place widget on top of each other
                 networkSvg, // load image
                 Container(
-                  margin: EdgeInsets.all(20),
+                  margin: const EdgeInsets.all(20),
                   child: Table(
                     // create table
-                    defaultColumnWidth: FixedColumnWidth(120.0),
+                    defaultColumnWidth: const FixedColumnWidth(120.0),
                     border: TableBorder.all(
                         color: Colors.black,
                         style: BorderStyle.solid,
                         width: 2),
                     children: [
                       TableRow(children: [
-                        Column(children: [
+                        Column(children: const [
                           Text('Details', style: TextStyle(fontSize: 20.0))
                         ]),
-                        Column(children: [
+                        Column(children: const [
                           Text('Value', style: TextStyle(fontSize: 20.0))
                         ]),
                       ]),
                       TableRow(children: [
-                        Column(children: [Text('Team Name')]),
+                        Column(children: const [Text('Team Name')]),
                         Column(children: [Text(_name(snapshot.data[0]))]),
                       ]),
                       TableRow(children: [
-                        Column(children: [Text('Address')]),
+                        Column(children: const [Text('Address')]),
                         Column(children: [Text(_address(snapshot.data[0]))])
                       ]),
                     ],
@@ -189,35 +184,12 @@ class _DemoAppState extends State<DemoApp> {
                         )))
               ]));
             } else {
-              return Center(child: CircularProgressIndicator());
+              return const Center(child: CircularProgressIndicator());
             }
           },
         ),
       ),
       // _buildSuggestions(),
-    );
-  }
-
-  Widget _buildSuggestions() {
-    return ListView.builder(
-        padding: const EdgeInsets.all(16.0),
-        itemBuilder: /*1*/ (context, i) {
-          if (i.isOdd) return const Divider(); /*2*/
-
-          final index = i ~/ 2; /*3*/
-          if (index >= _suggestions.length) {
-            _suggestions.addAll(generateWordPairs().take(10)); /*4*/
-          }
-          return _buildRow(_suggestions[index]);
-        });
-  }
-
-  Widget _buildRow(WordPair pair) {
-    return ListTile(
-      title: Text(
-        pair.asPascalCase,
-        style: _biggerFont,
-      ),
     );
   }
 }
