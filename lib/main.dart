@@ -1,7 +1,7 @@
 import 'package:english_words/english_words.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-
+import 'package:intl/intl.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import 'dart:async';
@@ -14,21 +14,22 @@ void main() => runApp(MyApp());
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(title: 'Startup Name Gen', home: RandomWords());
+    return MaterialApp(title: 'Startup Name Gen', home: DemoApp());
   }
 }
 
-class RandomWords extends StatefulWidget {
+class DemoApp extends StatefulWidget {
   @override
-  _RandomWordsState createState() => _RandomWordsState();
+  _DemoAppState createState() => _DemoAppState();
 }
 
-class _RandomWordsState extends State<RandomWords> {
+class _DemoAppState extends State<DemoApp> {
   final _suggestions = <WordPair>[];
   final _biggerFont = const TextStyle(fontSize: 18.0);
 
   @override
-  Future<List> func_name() async {
+  Future<List> getApiData() async {
+    // get request for chelsea team data
     http.Response response =
         await http.get(Uri.parse('https://api.football-data.org/v2/teams/61'),
             // Send authorization headers to the backend.
@@ -36,6 +37,18 @@ class _RandomWordsState extends State<RandomWords> {
           'X-Auth-Token': 'df696478a0754c2587c5b849289e4dcb',
         });
 
+    Map<String, dynamic> jsonResponse;
+
+    // check ok response & send default on failure
+    if(response.statusCode == 200){
+      jsonResponse = convert.jsonDecode(response.body);
+    } else{
+      jsonResponse = {"name": "Name not found",
+                      "address": "Address not found",
+                      "crestUrl": "https://img01.bt.co.uk/s/assets/130921/images/logo/logo-2018.svg"};
+    }
+
+    // get request for matches played in last 30 days
     http.Response response2 = await http.get(
         Uri.parse('https://api.football-data.org/v2/teams/61/matches'
             ''),
@@ -44,31 +57,53 @@ class _RandomWordsState extends State<RandomWords> {
           'X-Auth-Token': 'df696478a0754c2587c5b849289e4dcb',
         });
 
-    Map<String, dynamic> jsonResponse = convert.jsonDecode(response.body);
-    Map<String, dynamic> jsonResponse2 = convert.jsonDecode(response2.body);
 
-    final todaysDate = DateTime.now();
 
+    Map<String, dynamic> jsonResponse2;
+    // create list for output
     List<Map<String, dynamic>> l = [];
+    if(response2.statusCode == 200){
+      jsonResponse2 = convert.jsonDecode(response2.body);
+      // find todays date
+      final todaysDate = DateTime.now();
+      // create date format for output
+      final DateFormat formatter = DateFormat('dd/MMM/yyyy');
 
-    for (int i = 0; i < jsonResponse2['matches'].length; i++) {
-      print(jsonResponse2['matches'][i]['competition']['name']);
-      print(todaysDate);
-      var gameDate = DateTime.parse(jsonResponse2['matches'][i]['utcDate']);
-      final difference = gameDate.difference(todaysDate).inDays;
-      if ((difference >= -30) && (difference <= 0)) {
-        print(jsonResponse2['matches'][i]);
-        var identifier = {
-          'away': jsonResponse2['matches'][i]['awayTeam'],
-          'home': jsonResponse2['matches'][i]['homeTeam'],
-          'score': jsonResponse2['matches'][i]['score']
-        };
-        l.add(identifier);
+      // for loop to iterate through API results
+      for (int i = jsonResponse2['matches'].length - 1; i >= 0; i--) {
+        // find game date
+        var gameDate = DateTime.parse(jsonResponse2['matches'][i]['utcDate']);
+        // find difference of 2 dates
+        final difference = gameDate.difference(todaysDate).inDays;
+        // check to see if difference is within lb and ub range
+        if ((difference >= -30) && (difference <= 0)) {
+          // store data into a map
+          var identifier = {
+            'away': jsonResponse2['matches'][i]['awayTeam'],
+            'home': jsonResponse2['matches'][i]['homeTeam'],
+            'score': jsonResponse2['matches'][i]['score'],
+            'date': formatter.format(gameDate)
+          };
+          // push to a list
+          l.add(identifier);
+        }
       }
+    }else{
+      var identifier = {
+        'away': {"name":"Not found"},
+        'home': {"name":"Not found"},
+        'score': {"fullTime":{"homeTeam":"0", "awayTeam":"0"}},
+        'date': "Date not found"
+      };
+      // push to a list
+      l.add(identifier);
+
     }
 
+    // prepare data for output
     List output = [jsonResponse, l];
 
+    //send data off
     return output;
   }
 
@@ -87,22 +122,19 @@ class _RandomWordsState extends State<RandomWords> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("jsonResponse"),
+        title: Text("Football demo app"),
       ),
       body: Container(
         child: FutureBuilder<List>(
-          future: func_name(),
+          // create future builder
+          future: getApiData(), // call api function above
           builder: (BuildContext context, AsyncSnapshot snapshot) {
+            // pass context
             if (snapshot.hasData) {
-              print("Check ${_name(snapshot.data[0])}");
-              print("Check ${_address(snapshot.data[0])}");
+              // check api has returned data
 
-              // for(int i = 0; i < snapshot.data[1].length; i++){
-              //
-              //   print();
-              // }
-              print(snapshot.data[1][1]['away']);
               final Widget networkSvg = SvgPicture.network(
+                // create widjet for logo
                 _logo(snapshot.data[0]),
                 semanticsLabel: 'Logo',
                 placeholderBuilder: (BuildContext context) => Container(
@@ -112,10 +144,12 @@ class _RandomWordsState extends State<RandomWords> {
 
               return Center(
                   child: Column(children: <Widget>[
-                networkSvg,
+                // place widget on top of each other
+                networkSvg, // load image
                 Container(
                   margin: EdgeInsets.all(20),
                   child: Table(
+                    // create table
                     defaultColumnWidth: FixedColumnWidth(120.0),
                     border: TableBorder.all(
                         color: Colors.black,
@@ -135,44 +169,25 @@ class _RandomWordsState extends State<RandomWords> {
                         Column(children: [Text(_name(snapshot.data[0]))]),
                       ]),
                       TableRow(children: [
-                        Column(children: [Text('Manager')]),
-                        Column(children: [Text('Tuchel')]),
-                      ]),
-                      TableRow(children: [
-                        Column(children: [Text('Wins')]),
-                        Column(children: [Text('5')])
-                      ]),
-                      TableRow(children: [
-                        Column(children: [Text('Draws')]),
-                        Column(children: [Text('1')])
-                      ]),
-                      TableRow(children: [
-                        Column(children: [Text('Loses')]),
-                        Column(children: [Text('0')])
-                      ]),
-                      TableRow(children: [
-                        Column(children: [Text('Points')]),
-                        Column(children: [Text('16')])
-                      ]),
-                      TableRow(children: [
                         Column(children: [Text('Address')]),
                         Column(children: [Text(_address(snapshot.data[0]))])
                       ]),
                     ],
                   ),
                 ),
-                    Expanded(
-                      child: SizedBox(
-                      height: 200.0,
-                      child:ListView.builder(
+                Expanded(
+                    child: SizedBox(
+                        height: 200.0,
+                        child: ListView.builder(
                           itemCount: snapshot.data[1].length,
-                        itemBuilder: (context, index) {
-                          return ListTile(
-                            title: Text(snapshot.data[1][index]['away']['name']),
-                          );
-                        },
-                    )))
-                     ]));
+                          itemBuilder: (context, index) {
+                            return ListTile(
+                              title: Text(
+                                  "${snapshot.data[1][index]['home']['name']} played ${snapshot.data[1][index]['away']['name']} on ${snapshot.data[1][index]['date']} and the score was ${snapshot.data[1][index]['score']['fullTime']['homeTeam']} : ${snapshot.data[1][index]['score']['fullTime']['awayTeam']} "),
+                            );
+                          },
+                        )))
+              ]));
             } else {
               return Center(child: CircularProgressIndicator());
             }
