@@ -189,7 +189,7 @@ class _DemoAppState extends State<DemoApp> {
           },
         ),
       ),
-      // _buildSuggestions(),
+
     );
   }
 }
